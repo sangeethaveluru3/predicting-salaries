@@ -1,96 +1,73 @@
-# ![](https://ga-dash.s3.amazonaws.com/production/assets/logo-9f88ae6c9c3871690e33280fcf557f33.png) Project 4: Web Scraping Job Postings
+# Predicting salaries
 
-## Business Case Overview
+The aim of this project was to scrape data science job postings from the jobs board website, [Indeed](https://www.indeed.co.uk/?from=gnav-jobsearch--jasx), clean and identify important features in the data obtained and create a classification model to predict the quartile the salaries fell into. The project was framed in the perspective of working for a firm who want to be competitive in the hiring market for data scientists and want to determine the factors most important predicting salary and use this information to accurately estimate a competitive salary when making offers.
 
-You're working as a data scientist for a contracting firm that's rapidly expanding. Now that they have their most valuable employee (you!), they need to leverage data to win more contracts. Your firm offers technology and scientific solutions and wants to be competitive in the hiring market. Your principal wants you to
+## Data and Web Scraping
 
-   - determine the industry factors that are most important in predicting the salary amounts for these data.
+The first part of the project was to use BeautifulSoup to scrape job postings, related to data science, from Indeed. The notebook `web-scraping` includes the code for scraping the relevant postings from 8 cities (London, Manchester, Brighton, Birmingham, Bristol, Edinburgh, New York and San Francisco) and the steps takes to clean the obtained data. 
 
-To limit the scope, your principal has suggested that you *focus on data-related job postings*, e.g. data scientist, data analyst, research scientist, business intelligence, and any others you might think of. You may also want to decrease the scope by *limiting your search to a single region.*
+`salary-full.csv` contains the cleaned dataset, with 3101 postings containing the following information:
 
-Hint: Aggregators like [Indeed.com](https://www.indeed.com) regularly pool job postings from a variety of markets and industries.
+- Company
+- Job title 
+- Salary (if any)
+- Preview of job description
+- Rating (if any)
+- Location 
+- City (some postings provided districts and I added in a city column to distinguish between cities easily)
 
-**Goal:** Scrape your own data from a job aggregation tool like Indeed.com in order to collect the data to best answer this question.
+## Feature Engineering and EDA 
 
----
+Intial EDA of the data included visualising the salary distribution across the different cities using a swarmplot and boxplots. We can see that London, NYC and San Fran (as expected) have higher median salaries than the other cities with San Fran's being the highest - although San Fran does have fewer salaries (as US cities seldom seem to share salary information on postings) compared to London so hard compare the two accurately.
 
-## Directions
-
-In this project you will be leveraging a variety of skills. The first will be to use the web-scraping and/or API techniques you've learned to collect data on data jobs from Indeed.com or another aggregator. Once you have collected and cleaned the data, you will use it to answer the two questions described above.
-
-### Factors that impact salary
-
-To predict salary the most appropriate approach would be a regression model.
-Here instead we just want to estimate which factors (like location, job title, job level, industry sector) lead to high or low salary and work with a classification model. To do so, split the salary into two groups of high and low salary, for example by choosing the median salary as a threshold (in principle you could choose any single or multiple splitting points).
-
-Use all the skills you have learned so far to build a predictive model.
-Whatever you decide to use, the most important thing is to justify your choices and interpret your results. *Communication of your process is key.* Note that most listings **DO NOT** come with salary information. You'll need to be able to extrapolate or predict the expected salaries for these listings.
-
-#### Directions:
-
-- Start by ONLY using the location as a feature.
-- Use at least two different classifiers you find suitable.
-- Remember that scaling your features might be necessary.
-- Display the coefficients/feature importances and write a short summary of what they mean.
-- Create a few new variables in your dataframe to represent interesting features of a job title (e.g. whether 'Senior' or 'Manager' is in the title).
-- Incorporate other text features from the title or summary that you believe will predict the salary.
-- Then build new classification models including also those features. Do they add any value?
-- Tune your models by testing parameter ranges, regularization strengths, etc. Discuss how that affects your models.
-- Discuss model coefficients or feature importances as applicable.
-
-#### Model evaluation:
-
-Your boss would rather tell a client incorrectly that they would get a lower salary job than tell a client incorrectly that they would get a high salary job. Adjust one of your models to ease his mind, and explain what it is doing and any tradeoffs.
+![](images/city_salary_dist.png)
 
 
-- Use cross-validation to evaluate your models.
-- Evaluate the accuracy, AUC, precision and recall of the models.
-- Plot the ROC and precision-recall curves for at least one of your models.
+I also tried a range of feature engineering tehniques, using Regex and NLP, to create useful features from the job titles, descriptions and ratings:
+- Dropped irrelevant job postings using regex, e.g. dropped all the rows with words like "technician" in their title without containing words like "data scientist", as there were a few like this e.g. "BIM Technician/Data Scientist"
+- Used regex to categorise the job postings into different sectors, e.g. recruitment, govt, university, finance and so on. 
+- Cleaned and turned the rating feature in a categorical variable to accomodate for null values
+- Used regex to classify senority and type of roles the job posting was indicating. E.g. as the figure shows, postings with the word 'head' in the job title indicated a higher salary
+
+![](images/roles.png)
+
+- Used NLP (TfidVectorizer) on the text from job titles and descriptions
+
+
+## Modelling 
+To predict salary the most appropriate approach would be a regression model, but the aim of this project was to turn this into a classification project where our model would predict which quartile the salary would fall under. Turning this into a classification problem could also help smooth out the moise from any extreme salary ranges. The notebook `predicting_salaries` contains the full code.
+
+So I prepared the target variable by splitting the salaries into 4 different quartiles, giving me a baseline accuracy of ~0.26 as expected. **I tested many different models using Gridsearch and found that Logisitic Regression with Ridge regularisation worked the best.**
+
+### Scoring methods
+
+This is how I decided which model was the "best":
+
+- **Mean CV Score**: This measures the accuracy of the models but in classification, accuracy isn't all we should be concerned about.
+
+- **Confusion Matrix Percentage/Count**: This is a score I made up to track how well the model minimises the lower right-hand triangle of the confusion matrix - specifically for the test set. This project brief specifies that the firm would rather make an offer lower than the true value (vs higher) as you can always re-offer higher without upsetting expectations. This effectively means you want the lower right-hand triangle of the confusion matrix to be minimised. I added up these values and divided through by the number of samples to get the fraction of lower right-hand triangle. I only judged this score based on the test set because model would have overfit to the train set. 
+
+### Best model and optimisation 
+
+Logistic Regression with Ridge had the best mean cv score, after gridsearching, as well as the lower number of points in the lower right-hand triangle of the confusion matrix. In order to optimise this further, I decided to get the best mean cv score possible while keeping the percentage of the lower right-hand triangle of the confusion matrix to below 15% by:
+
+- Manipulating the probability thresholds such that before predicting a class, it checks the difference in probabilites for a lower class, and only assigns the higher class if the difference in probability is more than 0.131818 (optimal threshold through testing).
+- Simulataneously adjusting the class weights for the algorithm to try to improve accuracy of either the upper two classes or lower two classes. 
+
+In the end, the best weights were {0:1, 1:1, 2:0.888889, 3:0.888889} with an accuracy score of 0.604878 and probability threshold of 0.131818. It improved the accuracy, presumably because it got more of class 0 and 1 right while keeping the confusion matrix percentage below 15%. The image below shows the improvement in the lower right-hand triangle from 25.5% to below 15% after the optimisation. 
+
+![](images/conf_matrix.png)
+
+
+### Feature importances
+
+The feature importances, in this case words of importance, were in line with expectations with 'lead' and San Francisco seeming to positively influence for predicting class 3 (while negatively impacting class 1) while 'junior' and 'data analyst' seem to positively influence class 0. 
+
+![](images/feature_importances.png)
+
+
+## Conclusion
+Overall this project was a great opportunity to practise web scraping, learn about Regex for feature engineering and understand classification models in more depth by experimenting with probability thresholds and class weights. While an accuracy score of 0.605 is a sizeable increase from the baseline score of 0.26, this problem would have been better suited to a regression model for practical purposes. 
 
 
 
-<img src="http://imgur.com/xDpSobf.png" style="float: left; margin: 25px 15px 0px 0px; height: 25px">
-
-#### Bonus:
-
-- Answer the salary discussion by using your model to explain the tradeoffs between detecting high versus low salary positions.
-- Discuss the differences and explain when you want a high-recall or a high-precision model in this scenario.
-- Obtain the ROC/precision-recall curves for the different models you studied (at least the tuned model of each category) and compare.
-
----
-
-
-### Summarize your results in an executive summary written for a non-technical audience.
-
-- Writeups should be at least 500-1000 words, defining any technical terms, explaining your approach, as well as any risks and limitations.
-
-<img src="http://imgur.com/xDpSobf.png" style="float: left; margin: 25px 15px 0px 0px; height: 25px">
-
-### BONUS
-
-Convert your executive summary into a public blog post of at least 500 words, in which you document your approach in a tutorial for other aspiring data scientists. Link to this in your notebook.
-
-
----
-
-## Suggestions for Getting Started
-
-1. Collect data from [Indeed.com](www.indeed.com) (or another aggregator) on data-related jobs to use in predicting salary trends for your analysis.
-  - Select and parse data from *at least 1000 postings* for jobs, potentially from multiple location searches.
-2. Find out what factors most directly impact salaries (e.g. title, location, department, etc).
-  - Test, validate, and describe your models. What factors predict salary category? How do your models perform?
-3. Discover which features have the greatest importance when determining a low versus high paying job.
-  - Your Boss is interested in what overall features hold the greatest significance.
-  - HR is interested in which SKILLS and KEY WORDS hold the greatest significance.   
-4. Author an executive summary that details the highlights of your analysis for a non-technical audience.
-5. If tackling the bonus question, try framing the salary problem as a classification problem detecting low versus high salary positions.
-
----
-
-## Useful Resources
-
-- Scraping is one of the most fun, useful and interesting skills out there. Don’t lose out by copying someone else's code!
-- [Here is some advice on how to write for a non-technical audience](http://programmers.stackexchange.com/questions/11523/explaining-technical-things-to-non-technical-people).
-- [Documentation for BeautifulSoup can be found here](http://www.crummy.com/software/BeautifulSoup/).
-
----
