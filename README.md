@@ -1,6 +1,16 @@
 # Predicting salaries
 
-The aim of this project was to scrape data science job postings from the jobs board website, [Indeed](https://www.indeed.co.uk/?from=gnav-jobsearch--jasx), clean and identify important features in the data obtained and create a classification model to predict the quartile the salaries fell into. The project was framed in the perspective of working for a firm who want to be competitive in the hiring market for data scientists and want to determine the factors most important predicting salary and use this information to accurately estimate a competitive salary when making offers.
+The aim of this project was to scrape data science job postings from the jobs board website, [Indeed](https://www.indeed.co.uk/?from=gnav-jobsearch--jasx), clean and identify important features in the data obtained and create a classification model to predict the quartile the salaries fall into. The project was framed in the perspective of working for a firm who want to be competitive in the hiring market for data scientists and want to determine the factors most important predicting salary and use this information to accurately estimate a competitive salary when making offers.
+
+## Table of Contents:
+- [Data and Web Scraping](#Data)  
+- [Feature Engineering and EDA ](#Feature)
+- [Modelling](#Modelling)
+- [Conclusion](#Conclusion)
+
+---
+
+<a name="Data"/>
 
 ## Data and Web Scraping
 
@@ -15,6 +25,8 @@ The first part of the project was to use BeautifulSoup to scrape job postings, r
 - Rating (if any)
 - Location 
 - City (some postings provided districts and I added in a city column to distinguish between cities easily)
+
+<a name="Feature"/>
 
 ## Feature Engineering and EDA 
 
@@ -33,6 +45,7 @@ I also tried a range of feature engineering tehniques, using Regex and NLP, to c
 
 - Used NLP (TfidVectorizer) on the text from job titles and descriptions
 
+<a name="Modelling"/>
 
 ## Modelling 
 To predict salary the most appropriate approach would be a regression model, but the aim of this project was to turn this into a classification project where our model would predict which quartile the salary would fall under. Turning this into a classification problem could also help smooth out the moise from any extreme salary ranges. The notebook `predicting_salaries` contains the full code.
@@ -65,6 +78,7 @@ The feature importances, in this case words of importance, were in line with exp
 
 ![](images/feature_importances.png)
 
+<a name="Conclusion"/>
 
 ## Conclusion
 Overall this project was a great opportunity to practise web scraping, learn about Regex for feature engineering and understand classification models in more depth by experimenting with probability thresholds and class weights. While an accuracy score of 0.605 is a sizeable increase from the baseline score of 0.26, this problem would have been better suited to a regression model for practical purposes. 
