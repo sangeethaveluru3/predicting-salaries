@@ -1,6 +1,6 @@
 # Predicting salaries
 
-The aim of this project was to scrape data science job postings from the jobs board website, [Indeed](https://www.indeed.co.uk/?from=gnav-jobsearch--jasx), clean and identify important features in the data obtained and create a classification model to predict the quartile the salaries fall into. The project was framed in the perspective of working for a firm who want to be competitive in the hiring market for data scientists and want to determine the factors most important predicting salary and use this information to accurately estimate a competitive salary when making offers.
+The aim of this project was to scrape data science job postings from the jobs board website [Indeed](https://www.indeed.co.uk/?from=gnav-jobsearch--jasx), clean and identify important features in the data obtained and create a classification model to predict the quartile the salaries fall into. The project was framed in the perspective of working for a firm who want to be competitive in the hiring market for data scientists and want to determine the factors most important predicting salary and use this information to accurately estimate a competitive salary when making offers.
 
 ## Table of Contents:
 - [Data and Web Scraping](#Data)  
